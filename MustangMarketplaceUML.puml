@@ -1,0 +1,320 @@
+@startuml
+scale 0.7
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+skinparam nodesep 20
+skinparam ranksep 30
+
+' ==========================
+'  Client-side data structures
+' ==========================
+class ApiListing <<struct>> {
+    + int id
+    + int sellerId
+    + string sellerName
+    + string status
+    + string title
+    + string description
+    + double price
+    + string category
+}
+
+class ApiOffer <<struct>> {
+    + int offerId
+    + int listingId
+    + string listingTitle
+    + string buyerName
+    + string ownerName
+    + double offerPrice
+    + string status
+}
+
+' ==========================
+'  Client API wrapper
+' ==========================
+class ApiClient {
+    - unique_ptr<httplib::Client> client_
+    - string token_
+    - string email_
+    - int userId_
+    + ApiClient(string, int)
+    + bool registerUser(string, string, string&)
+    + bool login(string, string, string&)
+    + void logout()
+    + bool searchListings(string, vector<ApiListing>&, string&, string, string)
+    + bool getRecommendation(ApiListing&, string&)
+    + bool getMyListings(vector<ApiListing>&, string&)
+    + bool getWatchlist(vector<ApiListing>&, string&)
+    + bool createListing(string, string, double, string, string&, string)
+    + bool editListing(int, string, string, double, string&, const string*)
+    + bool tagListing(int, string, string&)
+    + bool removeListing(int, string&)
+    + bool addToWatchlist(int, string&)
+    + bool removeFromWatchlist(int, string&)
+    + bool makeOffer(int, double, string&)
+    + bool getIncomingOffers(vector<ApiOffer>&, string&)
+    + bool getMyOffers(vector<ApiOffer>&, string&)
+    + bool acceptOffer(int, string&)
+    + bool rejectOffer(int, string&)
+    + bool viewPhotoRaw(int, vector<uint8_t>&, string&)
+    + bool getNotifications(vector<string>&, string&)
+    + bool banUser(string, int, string&)
+    + bool getMyPurchases(vector<ApiListing>&, string&)
+    + bool getSellerRating(int, string&, string&)
+    + bool canRateSeller(int, int, string&)
+    + bool rateSeller(int, int, int, string, string&)
+    + bool isLoggedIn()
+    + string getCurrentEmail()
+    + int getCurrentUserId()
+}
+
+' ==========================
+'  Domain layer
+' ==========================
+class Session <<struct>> {
+    + bool active
+    + int user_id
+    + string email
+    + void clear()
+}
+
+class User {
+    - int user_id
+    - string email
+    - bool is_banned
+    + User(int, string, bool)
+    + int getUserId()
+    + string getEmail()
+    + bool getIsBanned()
+    + static string hashPassword(string)
+    + static string registerUser(string, string)
+    + static string login(string, string)
+}
+
+class Listing {
+    - int listing_id
+    - int seller_id
+    - string title
+    - string description
+    - double price
+    - string category
+    - string status
+    + Listing(int, int, string, string, double, string, string)
+    + int getListingId()
+    + int getSellerId()
+    + string getTitle()
+    + string getDescription()
+    + double getPrice()
+    + string getCategory()
+    + string getStatus()
+    + static string create(string, string, double, string, int*)
+    + static string remove(int)
+    + static string tag(int, string)
+    + static string edit(int, string, string, double)
+    + static string search(string, string, string)
+    + static string view(int)
+    + static string viewPurchases(int)
+}
+
+class Offer {
+    - int offer_id
+    - int listing_id
+    - int buyer_id
+    - int seller_id
+    - double offer_price
+    - string status
+    + Offer(int, int, int, int, double, string)
+    + int getOfferId()
+    + int getListingId()
+    + int getBuyerId()
+    + int getSellerId()
+    + double getOfferPrice()
+    + string getStatus()
+    + static string make(int, double)
+    + static optional<vector<IncomingOfferRow>> incoming(int)
+    + static optional<vector<OutgoingOfferRow>> outgoing(int)
+    + static string accept(int)
+    + static string reject(int)
+}
+
+class Watchlist {
+    - int watchlist_id
+    - int user_id
+    - int listing_id
+    + Watchlist(int, int, int)
+    + int getWatchlistId()
+    + int getUserId()
+    + int getListingId()
+    + static string add(int)
+    + static string remove(int)
+    + static string view(int)
+}
+
+class Photo {
+    - int photo_id
+    - int listing_id
+    - string file_path
+    + Photo(int, int, string)
+    + int getPhotoId()
+    + int getListingId()
+    + string getFilePath()
+    + static bool loadRaw(int, string&, string&)
+    + static string saveRaw(int, string)
+    + static string view(int)
+    + static string add(int, string)
+    + static void setAssetRoot(string)
+}
+
+class Rating {
+    - int rating_id
+    - int listing_id
+    - int buyer_id
+    - int seller_id
+    - int rating_value
+    - string comment
+    + Rating(int, int, int, int, int, string)
+    + int getRatingId()
+    + int getListingId()
+    + int getBuyerId()
+    + int getSellerId()
+    + int getRatingValue()
+    + string getComment()
+    + static string viewSellerRating(int)
+    + static string canRateSeller(int, int)
+    + static string rateSeller(int, int, int, string)
+}
+
+class Notification {
+    - int notification_id
+    - int user_id
+    - string message
+    + static bool add(int, string)
+    + static ViewData view(int)
+}
+
+class Recommendations <<service>> {
+    - string category
+    - string recommended_title
+    + Recommendations(string, string)
+    + string getCategory()
+    + string getRecommendedTitle()
+    + static string get()
+}
+
+class Admin <<service>> {
+    - static const string ACCESS_CODE
+    + static bool validateCode(string)
+    + static string banUser(int)
+}
+
+class Database {
+    + static const string DB_PATH
+    + static sqlite3* open(string)
+    + static void close(sqlite3*)
+}
+
+' ==========================
+'  Response builder structs
+' ==========================
+class IncomingOfferRow <<struct>> {
+    + int offer_id
+    + int listing_id
+    + string listing_title
+    + string buyer_name
+    + double offer_price
+    + string status
+}
+
+class OutgoingOfferRow <<struct>> {
+    + int offer_id
+    + int listing_id
+    + string listing_title
+    + string buyer_name
+    + string seller_name
+    + double offer_price
+    + string status
+}
+
+class ListingRow <<struct>> {
+    + int id
+    + string title
+    + string description
+    + double price
+    + string category
+    + int sellerId
+    + string sellerName
+    + string status
+}
+
+class ViewData <<struct>> {
+    + bool ok
+    + string message
+    + vector<string> notes
+}
+
+class ResponseBuilder {
+    + static nlohmann::json ok(string)
+    + static nlohmann::json error(string)
+    + static nlohmann::json okWith(string, initializer_list<pair<string,string>>)
+    + static vector<ListingRow> parseListingTsv(string)
+    + static nlohmann::json okMapWithListings(vector<ListingRow>, string)
+    + static nlohmann::json fromSearch(string)
+    + static nlohmann::json fromView(string)
+    + static nlohmann::json fromRecommend(string)
+    + static nlohmann::json fromNotifications(Notification::ViewData)
+    + static nlohmann::json fromIncoming(optional<vector<IncomingOfferRow>>, string)
+    + static nlohmann::json fromOutgoing(optional<vector<OutgoingOfferRow>>)
+}
+
+' ==========================
+'  Associations
+' ==========================
+ApiClient ..> ApiListing : "returns"
+ApiClient ..> ApiOffer : "returns"
+
+note top of ApiClient : "Used by main.cpp\n(ncurses UI entry point)"
+
+User ..> Session : "reads/writes"
+Listing ..> Session : "reads"
+Offer ..> Session : "reads"
+Watchlist ..> Session : "reads"
+Photo ..> Session : "reads"
+Rating ..> Session : "reads"
+Recommendations ..> Session : "reads"
+Admin ..> Session : "reads"
+
+User ..> Database : "uses"
+Listing ..> Database : "uses"
+Offer ..> Database : "uses"
+Watchlist ..> Database : "uses"
+Photo ..> Database : "uses"
+Rating ..> Database : "uses"
+Notification ..> Database : "uses"
+Recommendations ..> Database : "uses"
+Admin ..> Database : "uses"
+
+User "1" o-- "0..*" Listing : "sells"
+User "1" --> "0..*" Offer : "makes (as buyer)"
+User "1" --> "0..*" Offer : "receives (as seller)"
+User "1" *-- "0..*" Watchlist : "owns"
+User "1" *-- "0..*" Notification : "receives"
+User "1" --> "0..*" Rating : "writes"
+User "1" --> "0..*" Rating : "receives"
+
+Listing "1" *-- "0..*" Offer : "has"
+Listing "1" *-- "0..1" Photo : "has"
+Listing "1" --> "0..*" Rating : "may be rated"
+Listing "1" --> "0..*" Watchlist : "appears in"
+
+ResponseBuilder ..> ListingRow : "uses"
+ResponseBuilder ..> ViewData : "uses"
+ResponseBuilder ..> IncomingOfferRow : "uses"
+ResponseBuilder ..> OutgoingOfferRow : "uses"
+
+note top of ResponseBuilder : "Used by server_main.cpp\nto shape API responses"
+
+@enduml
