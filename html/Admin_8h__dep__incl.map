@@ -1,0 +1,9 @@
+<map id="Admin.h" name="Admin.h">
+<area shape="rect" id="Node000001" title="Admin&#45;only moderation operations." alt="" coords="147,5,223,31"/>
+<area shape="rect" id="Node000002" href="$Admin_8cpp.html" title="Admin&#45;only moderation operations implementation." alt="" coords="5,86,96,111"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="155,40,72,88,69,83,152,35"/>
+<area shape="rect" id="Node000003" href="$server__main_8cpp.html" title="HTTP+JSON server entry point and request routing for the marketplace API." alt="" coords="120,86,251,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="188,44,188,86,183,86,183,44"/>
+<area shape="rect" id="Node000004" href="$test__accept__admin__ratings_8cpp.html" title="Acceptance tests for moderation and seller&#45;rating flows." alt="" coords="275,79,450,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="224,34,321,76,319,81,222,39"/>
+</map>
